@@ -1,0 +1,9 @@
+{
+  "name": "commandcontrol",
+  "version": "1.0.0",
+  "title": "Command Control",
+  "author": "Luke Perkin",
+  "contact": "",
+  "www": "www.locogame.co.uk",
+  "description": "Remotely view and check up on your factorio via your radars"
+}
