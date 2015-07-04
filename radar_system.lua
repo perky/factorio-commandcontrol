@@ -200,7 +200,7 @@ function RadarSystem:OnRadarBuilt( radarEntity, player )
 end
 
 function RadarSystem:OnRadarDestroy( radarEntity, player )
-	local removedRadar
+	local removedRadar = nil
 	for i, radar in ipairs(self.radars) do
 		if radar.equals(radarEntity) then
 			table.remove(self.radars, i)
@@ -209,7 +209,7 @@ function RadarSystem:OnRadarDestroy( radarEntity, player )
 		end
 	end
 
-	if self.nearby_radar[player.name] and self.nearby_radar[player.name].equals(removedRadar) then
+	if removedRadar and self.nearby_radar[player.name] and self.nearby_radar[player.name].equals(removedRadar) then
 		self:CloseGUI(player)
 	end
 end
