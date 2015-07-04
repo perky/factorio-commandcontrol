@@ -7,11 +7,12 @@ require("helpers.gui_helpers")
 require("helpers.coroutine_helpers")
 require("radar_system")
 
-local radar_system
+local radar_system, mod_has_init
 
 local function OnGameInit()
 	radar_system = RadarSystem.CreateActor()
 	radar_system:Init()
+	mod_has_init = true
 end
 
 local function OnGameSave()
@@ -19,15 +20,15 @@ local function OnGameSave()
 end
 
 local function OnGameLoad()
-	if glob.radar_system then
+	if not mod_has_init and glob.radar_system then
 		radar_system = RadarSystem.CreateActor(glob.radar_system)
 		radar_system:OnLoad()
+		mod_has_init = true
 	end
 end
 
 local function OnPlayerCreated( playerindex )
 	local player = game.players[playerindex]
-	radar_system:OnPlayerCreated(player)
 end
 
 local function OnEntityBuilt( entity, playerindex )

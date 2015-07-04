@@ -12,43 +12,60 @@ function RadarSystem:Init()
 	self.nearby_radar = {}
 	self.viewing_radar = {}
 	self.player_character = {}
+	StartCoroutine(self.UpdateGUIRoutine, self)
 end
 
 function RadarSystem:OnLoad()
 	self.enabled = true
-	for playerIndex, player in ipairs(game.players) do
-		StartCoroutine(function() self:CheckPlayerIsNearRoutine(player) end)
-	end
+	StartCoroutine(self.UpdateGUIRoutine, self)
 end
 
 function RadarSystem:OnDestroy()
 	self.enabled = false
 end
 
-function RadarSystem:OnPlayerCreated( player )
-	StartCoroutine(function() self:CheckPlayerIsNearRoutine(player) end)
-end
+function RadarSystem:CheckPlayerIsNearRadar( player )
+	if self.viewing_radar[player.name] then
+		return
+	end
 
-function RadarSystem:CheckPlayerIsNearRoutine( player )
-	while self.enabled and not self.viewing_radar[player.name] do
-		if self.nearby_radar[player.name] then
-			local dist = util.distance(player.position, self.nearby_radar[player.name].position)
-			if dist > self.gui_activation_distance + 2 then
-				if self.gui then self:CloseGUI(player) end
-				self.nearby_radar[player.name] = nil
-			end
-		else
-			local searchArea = SquareArea(player.position, self.gui_activation_distance)
-			local nearRadars = game.findentitiesfiltered{area = searchArea, name = "radar"}
-			if #nearRadars > 0 then
-				self.nearby_radar[player.name] = nearRadars[1]
-				if not self.gui[player.name] then 
-					self:OpenGUI(player)
-				end
+	if self.nearby_radar[player.name] then
+		local dist = util.distance(player.position, self.nearby_radar[player.name].position)
+		if dist > self.gui_activation_distance + 2 then
+			if self.gui[player.name] then self:CloseGUI(player) end
+			self.nearby_radar[player.name] = nil
+		end
+	else
+		local searchArea = SquareArea(player.position, self.gui_activation_distance)
+		local nearRadars = game.findentitiesfiltered{area = searchArea, name = "radar"}
+		if #nearRadars > 0 then
+			self.nearby_radar[player.name] = nearRadars[1]
+			if not self.gui[player.name] then 
+				self:OpenGUI(player)
 			end
 		end
+	end
+end
 
-		WaitForTicks(1 * SECONDS)
+function RadarSystem:UpdateGUIRoutine()
+	WaitForTicks(1*SECONDS)
+
+	for playerIndex, player in ipairs(game.players) do
+		if self.gui[player.name] then
+			self:CloseGUI(player)
+			self:OpenGUI(player)
+		end
+	end
+
+	WaitForTicks(1*SECONDS)
+
+	while self.enabled do
+		for playerIndex, player in ipairs(game.players) do
+			if self.gui[player.name] then
+				self:UpdateGUI(player)
+			end
+		end
+		WaitForTicks(1*SECONDS)
 	end
 end
 
@@ -68,9 +85,10 @@ function RadarSystem:OnTick()
 					self:CloseGUI(player)
 				end
 			end
-			if self.gui[player.name] then
-				self:UpdateGUI(player)
-			end
+		end
+
+		if game.tick % (1*SECONDS) == 0 then
+			self:CheckPlayerIsNearRadar(player)
 		end
 	end
 end
@@ -105,7 +123,6 @@ function RadarSystem:ExitRadarViewer( player )
 		player.character = self.player_character[player.name]
 		self.player_character[player.name] = nil
 		self.viewing_radar[player.name] = nil
-		StartCoroutine(function() self:CheckPlayerIsNearRoutine(player) end)
 	end
 end
 
@@ -150,6 +167,8 @@ function RadarSystem:CloseGUI( player )
 end
 
 function RadarSystem:UpdateGUI( player )
+	if not self.gui[player.name] then return end
+
 	for i, radar in ipairs(self.radars) do
 		if radar.energy > 1 then
 			self.buttons[player.name][i].style = "cc_radar_button_style"
