@@ -29,7 +29,11 @@ function RadarSystem:CheckPlayerIsNearRadar( player )
 		return
 	end
 
-	if self.nearby_radar[player.name] then
+	local nearbyRadar = self.nearby_radar[player.name]
+	if nearbyRadar and not nearbyRadar.valid then
+		if self.gui[player.name] then self:CloseGUI(player) end
+		self.nearby_radar[player.name] = nil
+	elseif nearbyRadar and nearbyRadar.valid then
 		local dist = util.distance(player.position, self.nearby_radar[player.name].position)
 		if dist > self.gui_activation_distance + 2 then
 			if self.gui[player.name] then self:CloseGUI(player) end
@@ -97,7 +101,7 @@ function RadarSystem:EnterRadarViewer( data )
 	local radar = data.radar
 	local player = data.player
 
-	if radar.energy < 1 then return end
+	if not radar.valid or radar.energy < 1 then return end
 
 	player.print("Viewing radar "..radar.backername..".")
 
@@ -170,7 +174,11 @@ function RadarSystem:UpdateGUI( player )
 	if not self.gui[player.name] then return end
 
 	for i, radar in ipairs(self.radars) do
-		if radar.energy > 1 then
+		if not radar.valid then
+			self:CloseGUI(player)
+			self:OpenGUI(player)
+			return
+		elseif radar.energy > 1 then
 			self.buttons[player.name][i].style = "cc_radar_button_style"
 		else
 			self.buttons[player.name][i].style = "cc_radar_button_disabled_style"
