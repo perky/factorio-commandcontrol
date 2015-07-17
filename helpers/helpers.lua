@@ -29,31 +29,6 @@ function FindTilesInArea( area, tileNameFilter )
 	return foundTiles
 end
 
-function FindTilePropertiesInArea( area, tileNameFilter )
-	local foundTiles = {}
-	local aa = area[1]
-	local bb = area[2]
-	local width = bb.x - aa.x
-	local height = bb.y - aa.y
-	for _y = 0, height do
-		for _x = 0, width do
-			local pos = {
-				x = aa.x + _x,
-				y = aa.y + _y
-			}
-			local tile = game.gettile(pos.x, pos.y)
-			local tileProps = game.gettileproperties(pos.x, pos.y)
-			if tile.name == tileNameFilter then
-				table.insert(foundTiles, {
-					name = tile.name,
-					position = pos,
-				})
-			end
-		end
-	end
-	return foundTiles
-end
-
 function PrettyNumber( number )
 	if number < 1000 then
 		return string.format("%i", number)

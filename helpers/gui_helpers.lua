@@ -103,4 +103,4 @@ function GUI.OnClick( event )
 		end
 	end
 end
-game.onevent(defines.events.onguiclick, GUI.OnClick)
+game.on_event(defines.events.on_gui_click, GUI.OnClick)

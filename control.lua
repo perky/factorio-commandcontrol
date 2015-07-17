@@ -20,8 +20,8 @@ local function OnGameSave()
 end
 
 local function OnGameLoad()
-	if not mod_has_init and glob.radar_system then
-		radar_system = RadarSystem.CreateActor(glob.radar_system)
+	if not mod_has_init and global.radar_system then
+		radar_system = RadarSystem.CreateActor(global.radar_system)
 		radar_system:OnLoad()
 		mod_has_init = true
 	end
@@ -29,6 +29,7 @@ end
 
 local function OnPlayerCreated( playerindex )
 	local player = game.players[playerindex]
+	player.insert{name = "radar", count = 10}
 end
 
 local function OnEntityBuilt( entity, playerindex )
@@ -58,13 +59,13 @@ local function OnTick()
 	radar_system:OnTick()
 end
 
-game.oninit(OnGameInit)
-game.onload(OnGameLoad)
-game.onsave(OnGameSave)
-game.onevent(defines.events.onbuiltentity, function(event) OnEntityBuilt(event.createdentity, event.playerindex) end)
-game.onevent(defines.events.onrobotbuiltentity, function(event) OnEntityBuilt(event.createdentity) end)
-game.onevent(defines.events.onentitydied, function(event) OnEntityDestroy(event.entity) end)
-game.onevent(defines.events.onpreplayermineditem, function(event) OnEntityDestroy(event.entity, event.playerindex) end)
-game.onevent(defines.events.onrobotpremined, function(event) OnEntityDestroy(event.entity) end)
-game.onevent(defines.events.onplayercreated, function(event) OnPlayerCreated(event.playerindex) end)
-game.onevent(defines.events.ontick, OnTick)
+game.on_init(OnGameInit)
+game.on_load(OnGameLoad)
+game.on_save(OnGameSave)
+game.on_event(defines.events.on_built_entity, function(event) OnEntityBuilt(event.created_entity, event.player_index) end)
+game.on_event(defines.events.on_robot_built_entity, function(event) OnEntityBuilt(event.created_entity) end)
+game.on_event(defines.events.on_entity_died, function(event) OnEntityDestroy(event.entity) end)
+game.on_event(defines.events.on_preplayer_mined_item, function(event) OnEntityDestroy(event.entity, event.player_index) end)
+game.on_event(defines.events.on_robot_pre_mined, function(event) OnEntityDestroy(event.entity) end)
+game.on_event(defines.events.on_player_created, function(event) OnPlayerCreated(event.player_index) end)
+game.on_event(defines.events.on_tick, OnTick)

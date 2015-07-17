@@ -17,6 +17,15 @@ end
 
 function RadarSystem:OnLoad()
 	self.enabled = true
+
+	-- remove invalid radars.
+	for i = #self.radars, 1, -1 do
+		local radar = self.radars[i]
+		if not radar.valid then
+			table.remove(self.radars, i)
+		end
+	end
+
 	StartCoroutine(self.UpdateGUIRoutine, self)
 end
 
@@ -41,7 +50,7 @@ function RadarSystem:CheckPlayerIsNearRadar( player )
 		end
 	else
 		local searchArea = SquareArea(player.position, self.gui_activation_distance)
-		local nearRadars = game.findentitiesfiltered{area = searchArea, name = "radar"}
+		local nearRadars = player.surface.find_entities_filtered{area = searchArea, name = "radar"}
 		if #nearRadars > 0 then
 			self.nearby_radar[player.name] = nearRadars[1]
 			if not self.gui[player.name] then 
@@ -77,6 +86,7 @@ function RadarSystem:OnTick()
 	for playerIndex, player in ipairs(game.players) do
 		local viewingRadar = self.viewing_radar[player.name]
 		local nearbyRadar = self.nearby_radar[player.name]
+
 		if (viewingRadar and not viewingRadar.valid) or (nearbyRadar and not nearbyRadar.valid) then
 			self:ExitRadarViewer(player)
 			self:CloseGUI(player)
@@ -103,13 +113,13 @@ function RadarSystem:EnterRadarViewer( data )
 
 	if not radar.valid or radar.energy < 1 then return end
 
-	player.print("Viewing radar "..radar.backername..".")
+	player.print("Viewing radar "..radar.backer_name..".")
 
 	-- Remove the player's items if we switch to a different radar.
 	-- This is to prevent player's from using the cc system to transfer items over
 	-- long distances. If you want that, remove the next three lines.
 	if self.viewing_radar[player.name] and radar ~= self.viewing_radar[player.name] then
-		player.clearitemsinside()
+		player.clear_items_inside()
 	end
 
 	self.viewing_radar[player.name] = radar
@@ -174,7 +184,8 @@ function RadarSystem:UpdateGUI( player )
 	if not self.gui[player.name] then return end
 
 	for i, radar in ipairs(self.radars) do
-		if not radar.valid then
+		if (radar and not radar.valid) then
+			self:RemoveRadar(radar)
 			self:CloseGUI(player)
 			self:OpenGUI(player)
 			return
@@ -192,7 +203,7 @@ function RadarSystem:OpenRenameGUI( player )
 	local radarname = self:GetRadarName(radar)
 	GUI.PushParent(player.gui.center)
 		self.rename_gui[player.name] = GUI.PushParent(GUI.Frame("radar_rename", "Rename "..radarname, GUI.VERTICAL))
-			GUI.TextField("rename_input", radar.backername)
+			GUI.TextField("rename_input", radar.backer_name)
 			GUI.Button("done", "Done", "OnRenameDone", self, player)
 		GUI.PopParent()
 	GUI.PopParent()
@@ -203,7 +214,7 @@ function RadarSystem:OnRenameDone( player )
 	if self.viewing_radar[player.name] then radar = self.viewing_radar[player.name] end
 	local text = self.rename_gui[player.name].rename_input.text
 	if text ~= "" then
-		self.renames[radar.backername] = text
+		radar.backer_name = text;
 	end
 	self.rename_gui[player.name].destroy()
 	self:CloseGUI(player)
@@ -211,10 +222,10 @@ function RadarSystem:OnRenameDone( player )
 end
 
 function RadarSystem:GetRadarName( radar )
-	if self.renames and self.renames[radar.backername] then
-		return self.renames[radar.backername]
+	if not radar or (radar and not radar.valid) then
+		return "NIL"
 	else
-		return radar.backername
+		return radar.backer_name
 	end
 end
 
@@ -223,6 +234,15 @@ function RadarSystem:OnRadarBuilt( radarEntity, player )
 	if player and self.gui[player.name] then
 		self:CloseGUI(player)
 		self:OpenGUI(player)
+	end
+end
+
+function RadarSystem:RemoveRadar( radarToRemove )
+	for i, radar in ipairs(self.radars) do
+		if radar.equals(radarToRemove) then
+			table.remove(self.radars, i)
+			break
+		end
 	end
 end
 
