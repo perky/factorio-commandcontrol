@@ -16,7 +16,7 @@ local function OnGameInit()
 end
 
 local function OnGameSave()
-	glob.radar_system = radar_system
+	global.radar_system = radar_system
 end
 
 local function OnGameLoad()

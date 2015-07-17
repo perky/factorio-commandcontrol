@@ -111,6 +111,14 @@ function RadarSystem:EnterRadarViewer( data )
 	local radar = data.radar
 	local player = data.player
 
+	-- Check if the player is crafting something.
+	-- Changing character while crafting causes a crash
+	-- in factorio 0.12.0
+	if player.crafting_queue_size > 0 then
+		player.print("Cannot remote view while crafting.")
+		return
+	end
+
 	if not radar.valid or radar.energy < 1 then return end
 
 	player.print("Viewing radar "..radar.backer_name..".")
@@ -239,7 +247,7 @@ end
 
 function RadarSystem:RemoveRadar( radarToRemove )
 	for i, radar in ipairs(self.radars) do
-		if radar.equals(radarToRemove) then
+		if radar == radarToRemove then
 			table.remove(self.radars, i)
 			break
 		end
@@ -249,14 +257,14 @@ end
 function RadarSystem:OnRadarDestroy( radarEntity, player )
 	local removedRadar = nil
 	for i, radar in ipairs(self.radars) do
-		if radar.equals(radarEntity) then
+		if radar == radarEntity then
 			table.remove(self.radars, i)
 			removedRadar = radar
 			break
 		end
 	end
 
-	if removedRadar and self.nearby_radar[player.name] and self.nearby_radar[player.name].equals(removedRadar) then
+	if removedRadar and self.nearby_radar[player.name] and self.nearby_radar[player.name] == removedRadar then
 		self:CloseGUI(player)
 	end
 end
