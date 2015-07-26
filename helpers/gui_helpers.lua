@@ -18,6 +18,15 @@ function GUI.PopParent()
 	table.remove(GUI.parentStack, #GUI.parentStack)
 end
 
+function GUI.PopAfter( elementName )
+	while #GUI.parentStack > 0 and GUI.Parent().name ~= elementName do
+		GUI.PopParent()
+	end
+	if GUI.Parent().name == elementName then
+		GUI.PopParent()
+	end
+end
+
 function GUI.PopAll()
 	GUI.parentStack = {}
 end
@@ -32,7 +41,7 @@ function GUI.Frame(name, caption, direction)
 	end
 	local parent = GUI.Parent()
 	if not parent[name] then
-		return GUI.Parent().add{type = "frame", name=name, caption=caption, direction=direction}
+		return GUI.Parent().add{type = "frame", name=name, caption=caption, direction = direction}
 	else
 		return parent[name]
 	end

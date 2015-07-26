@@ -12,11 +12,26 @@ function RadarSystem:Init()
 	self.nearby_radar = {}
 	self.viewing_radar = {}
 	self.player_character = {}
+	-- added in 1.1.0
+	self.filtered_radars = {}
+	self.search_term = {}
+	self.visit_count = {}
+	--
 	StartCoroutine(self.UpdateGUIRoutine, self)
 end
 
 function RadarSystem:OnLoad()
 	self.enabled = true
+	
+	if not self.filtered_radars then
+		self.filtered_radars = {}
+	end
+	if not self.search_term then
+		self.search_term = {}
+	end
+	if not self.visit_count then
+		self.visit_count = {}
+	end
 
 	-- remove invalid radars.
 	for i = #self.radars, 1, -1 do
@@ -111,14 +126,6 @@ function RadarSystem:EnterRadarViewer( data )
 	local radar = data.radar
 	local player = data.player
 
-	-- Check if the player is crafting something.
-	-- Changing character while crafting causes a crash
-	-- in factorio 0.12.0
-	if player.crafting_queue_size > 0 then
-		player.print("Cannot remote view while crafting.")
-		return
-	end
-
 	if not radar.valid or radar.energy < 1 then return end
 
 	player.print("Viewing radar "..radar.backer_name..".")
@@ -137,6 +144,12 @@ function RadarSystem:EnterRadarViewer( data )
 	end
 	self:CloseGUI(player)
 	self:OpenGUI(player)
+
+	if not self.visit_count[radar.backer_name] then
+		self.visit_count[radar.backer_name] = 1
+	else
+		self.visit_count[radar.backer_name] = self.visit_count[radar.backer_name] + 1
+	end
 end
 
 function RadarSystem:ExitRadarViewer( player )
@@ -145,6 +158,57 @@ function RadarSystem:ExitRadarViewer( player )
 		player.character = self.player_character[player.name]
 		self.player_character[player.name] = nil
 		self.viewing_radar[player.name] = nil
+	end
+end
+
+function RadarSystem:SortRadarsByVisitCount( radarA, radarB )
+	local visitA = self.visit_count[radarA.backer_name]
+	local visitB = self.visit_count[radarB.backer_name]
+	if visitA == nil then
+		visitA = 0
+	end
+	if visitB == nil then
+		visitB = 0
+	end
+	return visitA > visitB
+end
+
+function RadarSystem:FilterSearch( player, forceRefresh )
+	local myGui = self.gui[player.name]
+	if not myGui then
+		return
+	end
+
+	local searchInput = string.lower(myGui.search_flow.search.text)
+	lastSearchTerm = self.search_term[player.name]
+	self.search_term[player.name] = searchInput
+	self.filtered_radars[player.name] = self.radars
+	local searchTermChanged = false
+
+	if lastSearchTerm ~= searchInput then
+		if searchInput and searchInput ~= "" then
+			local filteredRadars = {}
+			for i, radar in ipairs(self.radars) do
+				local radarName = string.lower(self:GetRadarName(radar))
+				if string.find(radarName, searchInput) then
+					table.insert(filteredRadars, radar)
+				end
+			end
+			self.filtered_radars[player.name] = filteredRadars
+		else
+			self.filtered_radars[player.name] = self.radars
+		end
+
+		searchTermChanged = true
+	end
+
+	if forceRefresh or searchTermChanged then
+		table.sort(self.filtered_radars[player.name], function(a, b) return self:SortRadarsByVisitCount(a,b) end)
+		--table.sort(self.radars, function(a, b) return self:SortRadarsByVisitCount(a,b) end)
+		GUI.PushParent(myGui)
+		self:DestroyRadarButtons(player)
+		self:AddRadarButtons(player)
+		GUI.PopAll()
 	end
 end
 
@@ -164,21 +228,46 @@ function RadarSystem:OpenGUI( player )
 				local currentRadarName = self:GetRadarName(currentRadar)
 				GUI.Button("rename", "Rename "..currentRadarName, "OpenRenameGUI", self, player)
 			GUI.PopParent()
+
+			GUI.PushParent(GUI.Flow("search_flow", GUI.HORIZONTAL))
+				GUI.Label("search_label", "Search:")
+				local search = GUI.TextField("search", "")
+				search.text = self.search_term[player.name] or ""
+			GUI.PopParent()
 			
-			self.buttons[player.name] = {}
-			for i, radar in ipairs(self.radars) do
-				if (i % 3) == 1 then
-					if i > 1 then
-						GUI.PopParent()
-					end
-					GUI.PushParent(GUI.Flow("buttons_"..i, GUI.HORIZONTAL))
-				end
-				radarname = self:GetRadarName(radar)
-				local btn = GUI.Button("view_radar_"..i, radarname, "EnterRadarViewer", self, {radar = radar, player = player})
-				btn.style = "cc_radar_button_style"
-				self.buttons[player.name][i] = btn
-			end
+			self:FilterSearch(player, true)
+
 	GUI.PopAll()
+end
+
+function RadarSystem:DestroyRadarButtons( player )
+	if self.gui[player.name].radar_buttons then
+		self.gui[player.name].radar_buttons.destroy()
+	end
+end
+
+function RadarSystem:AddRadarButtons( player )
+	self.buttons[player.name] = {}
+	local radars = self.filtered_radars[player.name]
+	GUI.PushParent(GUI.Flow("radar_buttons", GUI.VERTICAL))
+	for i, radar in ipairs(radars) do
+		if i > 27 and i < #radars then
+			local difference = (#radars - i) + 1
+			GUI.Label("end_results", string.format("%d more...", difference))
+			break
+		end
+		if (i % 3) == 1 then
+			if i > 1 then
+				GUI.PopParent()
+			end
+			GUI.PushParent(GUI.Flow("buttons_"..i, GUI.HORIZONTAL))
+		end
+		radarname = self:GetRadarName(radar)
+		local btn = GUI.Button("view_radar_"..i, radarname, "EnterRadarViewer", self, {radar = radar, player = player})
+		btn.style = "cc_radar_button_style"
+		self.buttons[player.name][i] = {["button"] = btn, ["radar"] = radar}
+	end
+	GUI.PopAfter("radar_buttons")
 end
 
 function RadarSystem:CloseGUI( player )
@@ -191,16 +280,20 @@ end
 function RadarSystem:UpdateGUI( player )
 	if not self.gui[player.name] then return end
 
-	for i, radar in ipairs(self.radars) do
+	self:FilterSearch(player)
+
+	for i, entry in ipairs(self.buttons[player.name]) do
+		local radar = entry.radar
+		local button = entry.button
 		if (radar and not radar.valid) then
 			self:RemoveRadar(radar)
 			self:CloseGUI(player)
 			self:OpenGUI(player)
 			return
 		elseif radar.energy > 1 then
-			self.buttons[player.name][i].style = "cc_radar_button_style"
+			button.style = "cc_radar_button_style"
 		else
-			self.buttons[player.name][i].style = "cc_radar_button_disabled_style"
+			button.style = "cc_radar_button_disabled_style"
 		end
 	end
 end
@@ -220,9 +313,10 @@ end
 function RadarSystem:OnRenameDone( player )
 	local radar = self.nearby_radar[player.name]
 	if self.viewing_radar[player.name] then radar = self.viewing_radar[player.name] end
-	local text = self.rename_gui[player.name].rename_input.text
-	if text ~= "" then
-		radar.backer_name = text;
+	local newName = self.rename_gui[player.name].rename_input.text
+	if newName ~= "" then
+		self.visit_count[newName] = self.visit_count[radar.backer_name]
+		radar.backer_name = newName;
 	end
 	self.rename_gui[player.name].destroy()
 	self:CloseGUI(player)
