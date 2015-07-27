@@ -29,7 +29,6 @@ end
 
 local function OnPlayerCreated( playerindex )
 	local player = game.players[playerindex]
-	player.insert{name = "radar", count = 10}
 end
 
 local function OnEntityBuilt( entity, playerindex )
