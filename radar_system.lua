@@ -161,6 +161,16 @@ function RadarSystem:ExitRadarViewer( player )
 	end
 end
 
+function RadarSystem:RemoveInvalidRadars( radarList )
+	for index = #radarList, 1, -1 do
+		local radar = radarList[index]
+		if radar and not radar.valid then
+			table.remove(radarList, index)
+		end
+	end
+	return radarList
+end
+
 function RadarSystem:SortRadarsByVisitCount( radarA, radarB )
 	local visitA = self.visit_count[radarA.backer_name]
 	local visitB = self.visit_count[radarB.backer_name]
@@ -202,9 +212,10 @@ function RadarSystem:FilterSearch( player, forceRefresh )
 		searchTermChanged = true
 	end
 
-	if forceRefresh or searchTermChanged then
+	if forceRefresh or searchTermChanged and self.filtered_radars[player.name] then
+		self.filtered_radars[player.name] = self:RemoveInvalidRadars(self.filtered_radars[player.name])
 		table.sort(self.filtered_radars[player.name], function(a, b) return self:SortRadarsByVisitCount(a,b) end)
-		--table.sort(self.radars, function(a, b) return self:SortRadarsByVisitCount(a,b) end)
+
 		GUI.PushParent(myGui)
 		self:DestroyRadarButtons(player)
 		self:AddRadarButtons(player)
