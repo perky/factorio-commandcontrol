@@ -25,6 +25,9 @@ local function OnGameLoad()
 		radar_system:OnLoad()
 		mod_has_init = true
 	end
+	if global.radar_system and not global.radar_system.ranges then --this is my quasimigration since I've added a new field
+		global.radar_system.ranges={["radar"]=3*32} --it'll probably have to be handled in differrent way soon
+	end
 end
 
 local function OnPlayerCreated( playerindex )
