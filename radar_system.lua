@@ -1,5 +1,6 @@
 ActorClass("RadarSystem", {
-	gui_activation_distance = 3
+	gui_activation_distance = 3,
+	ranges={"radar"=3*32}--to support modded radars that would be better done in separate file
 })
 
 function RadarSystem:Init()
@@ -371,5 +372,19 @@ function RadarSystem:OnRadarDestroy( radarEntity, player )
 
 	if removedRadar and self.nearby_radar[player.name] and self.nearby_radar[player.name] == removedRadar then
 		self:CloseGUI(player)
+	end
+	
+	Message(entity.localised_name.." "..entity.backer_name.." "..{"com-con-mes-destroyed"},entity.force)
+end
+
+function RadarSystem:OnOtherEntityDestroy(entity)
+	--need to determine whether it was in range of one of supported radars
+	for _,radar in pairs(self.radars) do
+		if (entity.force==radar.force)--this one should probably be done before entering the cycle, when mod stores different forces separately
+			if InSquare(entity.position,radar.position,self.ranges[radar.name]) then
+				Message(entity.localised_name.." "..{"com-con-mes-destroyed"}.." "..{"com-con-mes-near"}.." "..radar.backer_name, entity.force)
+				break
+			end
+		end
 	end
 end
