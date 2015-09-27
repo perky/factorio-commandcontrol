@@ -53,8 +53,6 @@ local function OnEntityDestroy( entity, playerindex )
 
 	if entity.name == "radar" and player then
 		radar_system:OnRadarDestroy(entity, player)
-	else
-        	radar_system:OnOtherEntityDestroy(entity)
 	end
 end
 
@@ -69,7 +67,14 @@ game.on_save(OnGameSave)
 game.on_event(defines.events.on_built_entity, function(event) OnEntityBuilt(event.created_entity, event.player_index) end)
 game.on_event(defines.events.on_robot_built_entity, function(event) OnEntityBuilt(event.created_entity) end)
 game.on_event(defines.events.on_entity_died, function(event) OnEntityDestroy(event.entity) end)
-game.on_event(defines.events.on_preplayer_mined_item, function(event) OnEntityDestroy(event.entity, event.player_index) end)
+game.on_event(defines.events.on_preplayer_mined_item, function(event)
+    OnEntityDestroy(event.entity, event.player_index) 
+    if entity.name == "radar" then 
+        Message({'',entity.localised_name," ",entity.backer_name," ",{"com-con-mes-destroyed"},entity.force})
+    else
+        radar_system:OnOtherEntityDestroy(entity)
+    end
+end)
 game.on_event(defines.events.on_robot_pre_mined, function(event) OnEntityDestroy(event.entity) end)
 game.on_event(defines.events.on_player_created, function(event) OnPlayerCreated(event.player_index) end)
 game.on_event(defines.events.on_tick, OnTick)
