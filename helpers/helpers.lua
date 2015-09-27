@@ -117,3 +117,10 @@ function InSquare(pos,center,radius)
 	return ((pos.x>center.x-radius) and (pos.x<center.x+radius) and
 		(pos.y>center.y-radius) and (pos.y<center.y+radius))
 end
+
+function Message(strin,force)
+    --sends message "strin" to all players of the "force"
+    for _,p in pairs(force.players) do
+        p.print(strin)
+    end
+end
