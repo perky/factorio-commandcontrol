@@ -373,8 +373,6 @@ function RadarSystem:OnRadarDestroy( radarEntity, player )
 	if removedRadar and self.nearby_radar[player.name] and self.nearby_radar[player.name] == removedRadar then
 		self:CloseGUI(player)
 	end
-	
-	Message({'',entity.localised_name," ",entity.backer_name," ",{"com-con-mes-destroyed"},entity.force})
 end
 
 function RadarSystem:OnOtherEntityDestroy(entity)
