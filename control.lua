@@ -50,6 +50,8 @@ local function OnEntityDestroy( entity, playerindex )
 
 	if entity.name == "radar" and player then
 		radar_system:OnRadarDestroy(entity, player)
+	else
+        	radar_system:OnOtherEntityDestroy(entity)
 	end
 end
 
