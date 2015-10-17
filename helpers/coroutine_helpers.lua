@@ -50,7 +50,7 @@ local function ResumeRoutine( routine, index )
 				end
 			else
 				if result1 then
-					game.player.print(tostring(result1))
+					--game.player.print(tostring(result1))
 					return false, result1
 				else
 					return false
@@ -85,7 +85,7 @@ function ResumeRoutines()
 		for i = #queued_events, 0, -1 do
 			local e = queued_events[i]
 			if e then
-				game.raiseevent(e.event, e.data)
+				script.raise_event(e.event, e.data)
 				table.remove(queued_events, i)
 			end
 		end
