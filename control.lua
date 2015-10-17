@@ -41,7 +41,7 @@ local function OnEntityBuilt( entity, playerindex )
 	end
 
 	if entity.name == "radar" and player then
-		radar_system:OnRadarBuilt(entity, player)
+		global.radar_system:OnRadarBuilt(entity, player)
 	end
 end
 
@@ -52,7 +52,7 @@ local function OnEntityDestroy( entity, playerindex )
 	end
 
 	if entity.name == "radar" and player then
-		radar_system:OnRadarDestroy(entity, player)
+		global.radar_system:OnRadarDestroy(entity, player)
 	end
 end
 
@@ -60,13 +60,13 @@ local function Messaging(entity)
     if entity.name == "radar" then 
         Message({'',entity.localised_name," ",entity.backer_name," ",{"com-con-mes-destroyed"},entity.force})
     else
-        radar_system:OnOtherEntityDestroy(entity)
+        global.radar_system:OnOtherEntityDestroy(entity)
     end
 end
 
 local function OnTick()
 	ResumeRoutines()
-	radar_system:OnTick()
+	global.radar_system:OnTick()
 end
 
 script.on_init(OnGameInit)
