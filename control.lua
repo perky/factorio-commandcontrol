@@ -58,7 +58,7 @@ end
 
 local function Messaging(entity)
     if entity.name == "radar" then 
-        Message({'',entity.localised_name," ",entity.backer_name," ",{"com-con-mes-destroyed"},entity.force})
+        Message({'',entity.localised_name," ",entity.backer_name," ",{"com-con-mes-destroyed"}},entity.force)
     else
         global.radar_system:OnOtherEntityDestroy(entity)
     end
