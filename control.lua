@@ -53,11 +53,21 @@ local function OnEntityDestroy( entity, playerindex )
 
 	if entity.name == "radar" and player then
 		global.radar_system:OnRadarDestroy(entity, player)
-	else
+    	else
         	global.radar_system:OnOtherEntityDestroy(entity)
 	end
 end
 
+local function OnEntityMined(entity,playerindex)
+    	local player
+	if playerindex then
+		player = game.players[playerindex]
+	end
+
+	if entity.name == "radar" and player then
+		global.radar_system:OnRadarDestroy(entity, player)
+	end
+end
 
 local function OnTick()
 	ResumeRoutines()
@@ -70,7 +80,7 @@ script.on_configuration_changed(Migration_1_1_2)--here probably should be some m
 script.on_event(defines.events.on_built_entity, function(event) OnEntityBuilt(event.created_entity, event.player_index) end)
 script.on_event(defines.events.on_robot_built_entity, function(event) OnEntityBuilt(event.created_entity) end)
 script.on_event(defines.events.on_entity_died, function(event) OnEntityDestroy(event.entity); end)
-script.on_event(defines.events.on_preplayer_mined_item, function(event) OnEntityDestroy(event.entity, event.player_index);end)
-script.on_event(defines.events.on_robot_pre_mined, function(event) OnEntityDestroy(event.entity) end)
+script.on_event(defines.events.on_preplayer_mined_item, function(event) OnEntityMined(event.entity, event.player_index);end)
+script.on_event(defines.events.on_robot_pre_mined, function(event) OnEntityMined(event.entity) end)
 script.on_event(defines.events.on_player_created, function(event) OnPlayerCreated(event.player_index) end)
 script.on_event(defines.events.on_tick, OnTick)
