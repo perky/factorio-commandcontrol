@@ -378,11 +378,12 @@ end
 function RadarSystem:OnOtherEntityDestroy(entity)
 	--need to determine whether it was in range of one of supported radars
 	for _,radar in pairs(self.radars) do
-		if (entity.force==radar.force) then--this one should probably be done before entering the cycle, when mod stores different forces separately
+		if radar.valid and (entity.force==radar.force) then--this one should probably be done before entering the cycle, when mod stores different forces separately
 			if InSquare(entity.position,radar.position,self.ranges[radar.name]) then
 				Message({"",entity.localised_name," ",{"com-con-mes-destroyed"}," ",{"com-con-mes-near"}," ",radar.backer_name}, entity.force)
 				break
 			end
+        elseif not radar.valid then table.remove(self.radars,_)
 		end
 	end
 end
